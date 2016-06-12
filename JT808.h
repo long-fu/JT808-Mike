@@ -5,11 +5,7 @@ typedef unsigned short WORD;
 typedef unsigned long DWORD;
 typedef unsigned char BYTE;
 
-struct st_test{
-    char *name;
-    char *stupn;
-    char *dob;
-    };
+
 
 struct st_dataset{
     BYTE *phonenumber;
@@ -21,6 +17,7 @@ struct st_dataset{
     BYTE *speed;
     BYTE *direction;
     BYTE *GPStime;
+    DWORD order;
     };
 
 struct st_DataBodyProperty{
@@ -43,22 +40,15 @@ struct st_DataHeader{
     struct st_Split SplitSign;
     };
 
-struct st_Message{
+/*struct st_Message{
     BYTE Head;
     BYTE *MessageHead;
     BYTE *GPSinfo;
     BYTE CRC;
     BYTE Tail;
-    };
-
-
-/*struct st_alart{
-    DWORD a;
-    };
-
-struct st_status{
-    DWORD b;
     };*/
+
+
 
 struct st_GPS{
     DWORD alart;
@@ -91,11 +81,11 @@ WORD JT808_body_array(struct st_GPS *gps, BYTE *Array, WORD arrlen);
 
 WORD JT808_head_array(struct st_DataHeader *head, BYTE *Array, WORD arrlen);
 
-BYTE *combine_array(BYTE *array1, BYTE *array2, BYTE *resultarr);
+BYTE *combine_array(BYTE *array1, BYTE *array2, int Array1_Length, int Array2_Length, BYTE *resultarr);
 
-BYTE get_crc(BYTE *Array);
+BYTE get_crc(BYTE *Array, int ArrayLength);
 
-WORD JT808_final_array(BYTE *head, BYTE *body, BYTE *Array, WORD arrlen);
+WORD JT808_final_array(BYTE *head, BYTE *body, BYTE *finalary, WORD HeaderLength, WORD BodyLength, WORD arrlen);
 
 
 #endif // JT808_H_INCLUDED
