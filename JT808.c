@@ -14,17 +14,23 @@
 #include <sys/stat.h>
 #include <syslog.h>
 #include <time.h>
+#include <pthread.h>
 
 
 
 
 #define NewPath "/tmp/JT808_Log"
+pthread_t thread[1];
+pthread_mutex_t mut;
 
 struct st_dataset dataarray[10000];
+ char ReceiveBuffer[4096];
 static int global_order = 0;
 FILE *logfp, *cfgfp;
+int s;
 int CarNumber, MySQLPort, PacketEncryption, PacketSplit, PacketType, TCPPort, Interval;
 char MySQLServer[50], MySQLDatabase[50], MySQLUsername[50], MySQLPassword[50], TCPServer[50], TargetID[50], MySQLTable[50];
+
 
 
 char *ConfigFilter (char *src)
@@ -490,9 +496,70 @@ unsigned long get_file_size(const char *path)
     return filesize;
 }
 
+
+
+
+int SocketRead(int nSocket, char *pBuffer, int nLen)
+{
+    if (nSocket == -1){
+        return -1;
+    }
+    int RecvValue = 0;
+    RecvValue = recv(nSocket, pBuffer, nLen, 0);
+    if (RecvValue == 0){
+        return -1;
+    }
+    if (RecvValue == -1){
+        if (errno == 0){
+            return -1;
+        } else if (errno == EAGAIN){
+            return 0;
+            }
+    return RecvValue;
+    }
+    if (RecvValue > 0){
+        return RecvValue;
+    } else {
+    return -1;
+    }
+}
+
+void ReceiveThread(void)
+{
+    int n = 0;
+    char *pBuffer = ReceiveBuffer;
+    int nBufferSize = 4096;
+    int nSocket = s;
+        while (1)
+        {
+                memset(pBuffer, 0, nBufferSize);
+                pthread_mutex_lock(&mut);
+                n = SocketRead(nSocket, pBuffer, nBufferSize);
+                if (n > 0){
+                    write_log(NewPath, logfp, pBuffer);
+                }
+                pthread_mutex_unlock(&mut);
+                sleep(3);
+
+        }
+        pthread_exit(NULL);
+}
+
+void thread_create(void)
+{
+        int temp;
+        memset(&thread, 0, sizeof(thread));
+        if((temp = pthread_create(&thread[0], NULL, (void *)ReceiveThread, NULL)) != 0){
+            write_log(NewPath, logfp, "Failed to Create Thread!\n");
+        } else {
+            write_log(NewPath,logfp,"Thread Created!\n");
+            }
+
+}
+
+
 int main(void){
-    int headerlength, bodylength, packetlength, z, CarInServer, s;
-    char ReceiveBuffer[4096];
+    int headerlength, bodylength, packetlength, z, CarInServer;
     if ((Read_CfgFile("JT808Cfg", cfgfp)) != 14)
     {
         write_log(NewPath, logfp, "Cannot Read Config File!\n");
@@ -512,6 +579,8 @@ int main(void){
     daemon(0,0);
     //init_deamon();
     s = conn_TCP_Server(NewTCP, TCPPort);
+    pthread_mutex_init(&mut,NULL);
+    thread_create();
     while (1){
 
         CarInServer = conn_sql(NewSQL,NewUSR,NewPWD,NewDB,MySQLPort,NewTable,NewTarget);
@@ -541,7 +610,7 @@ int main(void){
 
         //DataReceived = recv(s, ReceiveBuffer, 4096, 0);
         //DataSent = SocketWrite(s,"pulse",6,5);
-        write_log(NewPath, logfp, (const char *)dataarray[z].phonenumber);
+        //write_log(NewPath, logfp, (const char *)dataarray[z].phonenumber);
 
         memset(headary, 0, sizeof(headary));
         memset(bodyary, 0, sizeof(bodyary));
