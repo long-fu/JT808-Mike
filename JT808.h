@@ -66,7 +66,7 @@ struct st_GPS{
 // a Message ID, a DataBodyProperty and a Phone Number.  It
 // returns a pointer to a DataHeader where includes all the inputs in given formats.
 // efficiency: O(n)
-struct st_DataHeader *JT808_header(WORD msgID, WORD bodylen, WORD encrypt, WORD sp, WORD order, BYTE *PhoneNum);
+void JT808_header(WORD msgID, WORD bodylen, WORD encrypt, WORD sp, WORD order, BYTE *PhoneNum, struct st_DataHeader *output);
 
 // *JT808_bodyppt(WORD bodylen, WORD encrypt, WORD sp, struct st_DataBodyProperty *result) is passed
 // a Message, a Message Encryption Type, a number that determines
@@ -81,7 +81,7 @@ WORD JT808_body_array(struct st_GPS *gps, BYTE *Array, WORD arrlen);
 
 WORD JT808_head_array(struct st_DataHeader *head, BYTE *Array, WORD arrlen);
 
-BYTE *combine_array(BYTE *array1, BYTE *array2, int Array1_Length, int Array2_Length, BYTE *resultarr);
+void *combine_array(BYTE *array1, BYTE *array2, int Array1_Length, int Array2_Length, BYTE *InputArray);
 
 BYTE get_crc(BYTE *Array, int ArrayLength);
 
